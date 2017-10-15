@@ -31,7 +31,7 @@ public class SwapiBackendApplication {
         return new CommandLineRunner() {
             @Override
             public void run(String... arg0) throws Exception {
-                accountRepository.save(new Account("rbaxter", "password"));
+                accountRepository.save(new Account("test", "password"));
             }
         };
     }
