@@ -1,23 +1,20 @@
 package com.kwintenp.swapibackend;
 
-import com.kwintenp.swapibackend.entities.Account;
-import com.kwintenp.swapibackend.repositories.AccountRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @SpringBootApplication
 public class SwapiBackendApplication {
@@ -25,61 +22,20 @@ public class SwapiBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(SwapiBackendApplication.class, args);
     }
-
-    @Bean
-    CommandLineRunner init(final AccountRepository accountRepository) {
-        return new CommandLineRunner() {
-            @Override
-            public void run(String... arg0) throws Exception {
-                accountRepository.save(new Account("test", "password"));
-            }
-        };
-    }
 }
 
-@Configuration
-class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
-
-    @Autowired
-    AccountRepository accountRepository;
+@Component
+class CorsFilter extends OncePerRequestFilter {
 
     @Override
-    public void init(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService());
-    }
-
-    @Bean
-    UserDetailsService userDetailsService() {
-        return new UserDetailsService() {
-
-            @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                Account account = accountRepository.findByUsername(username);
-                if (account != null) {
-                    return new User(account.getUsername(), account.getPassword(), true, true, true, true,
-                            AuthorityUtils.createAuthorityList("USER"));
-                } else {
-                    throw new UsernameNotFoundException("could not find the user '"
-                            + username + "'");
-                }
-            }
-
-        };
-    }
-}
-
-@EnableWebSecurity
-@Configuration
-class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests()
-                .anyRequest()
-                .fullyAuthenticated()
-                .and().
-                httpBasic().and().
-                csrf().disable();
+    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
+                                    final FilterChain filterChain) throws ServletException, IOException {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, HEAD, OPTIONS");
+        response.addHeader("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+        response.addHeader("Access-Control-Expose-Headers", "Access-Control-Allow-Origin, Access-Control-Allow-Credentials");
+        response.addHeader("Access-Control-Allow-Credentials", "true");
+        response.addIntHeader("Access-Control-Max-Age", 10);
+        filterChain.doFilter(request, response);
     }
 }
